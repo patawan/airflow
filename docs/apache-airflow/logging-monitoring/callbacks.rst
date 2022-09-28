@@ -82,3 +82,48 @@ In the following example, failures in any task call the ``task_failure_alert`` f
         task2 = EmptyOperator(task_id="task2")
         task3 = EmptyOperator(task_id="task3", on_success_callback=dag_success_alert)
         task1 >> task2 >> task3
+
+Note the lack of parentheses when passing a function to ``on_failure_callback``. This is true for all five callback types listed above.
+
+
+TaskFlow API Example
+-------
+
+When using the TaskFLow API, callbacks can be passed within decorators.
+Task failures will pass back an ``exception`` to the ``context`` object that can then be passed to the callback function:
+
+.. code-block:: python
+
+    import datetime
+    import pendulum
+
+    from airflow.decorators import dag, task
+
+
+    def task_failure_alert(context):
+        print(f"Task has failed, with the exception: {context['exception']}")
+
+
+    @dag(
+        dag_id="example_taskflow_callback",
+        schedule=None,
+        start_date=pendulum.datetime(2021, 1, 1, tz="UTC"),
+        catchup=False,
+        tags=["example"],
+    )
+    def taskflow_example():
+        """
+        This DAG runs a single task
+        """
+
+        @task(on_failure_callback=task_failure_alert)
+        def task_1():
+            """
+            Prints out a message
+            """
+            print("This is Task 1")
+
+        message = task_1()
+
+
+    taskflow_example()
